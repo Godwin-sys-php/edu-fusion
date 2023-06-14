@@ -54,7 +54,7 @@ app.post('/quiz', async (req, res, next) => {
     }    
 
     Bien sûr c'est un exemple, prends des questions, plus pertinente, je fais juste ça pou m'assure que t'as compris le principe.
-    Génère entre 7 et 18 questions environ, bien précise sur le sujet sans vraiment t'en incarter sans pour autant rester coincé dedans.
+    Génère entre 5 et 10 questions environ, bien précise sur le sujet sans vraiment t'en incarter sans pour autant rester coincé dedans.
     `;
 
     if (elements) {
