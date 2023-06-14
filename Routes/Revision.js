@@ -12,6 +12,8 @@ const revisionCtrl = require("../Controllers/Revision")
 router.post("/start", authUser, creditCheck, validatorRevision, revisionCtrl.startRevisionSession)
 router.post("/:idRevision/chat", existRevision, authUserForRevision, validatorChat, revisionCtrl.sendChat)
 
+router.put("/:idRevision/favorite", existRevision, authUserForRevision, revisionCtrl.addToFavorite)
+
 router.get("/:idRevision", existRevision, authUserForRevision, revisionCtrl.getOne)
 router.get("/", authUser, revisionCtrl.getAll)
 

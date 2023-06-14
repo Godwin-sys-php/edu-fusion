@@ -224,23 +224,43 @@ exports.getAll = async (req, res) => {
   }
 };
 
-exports.deleteOne = async (req, res) => {
+exports.addToFavorite = async (req, res) => {
   try {
-    const revision = await Revision.customQuery(
-      "SELECT * FROM revision WHERE userId = ? AND forgotten = 0",
-      [req.user.id]
-    );
-
-    await Revision.updateOne(
-      { forgotten: true },
-      { id: req.params.idRevision }
-    );
-    const user2send = await Users.findOne({ id: req.user.id });
-
-    return res.status(200).json({ user:{...user2send[0], password: undefined}, success: true, revision: revision });
+    if (req.revision.userId == req.user.id) {
+      await Revision.updateOne({ favorite: !req.revision.favorite }, { id: req.revision.id });
+      const user2send = await Users.findOne({ id: req.user.id });
+      const last3 = await Revision.customQuery("SELECT * FROM revision WHERE userId = ? ORDER BY created DESC LIMIT 3", [req.user.id]);
+  
+      return res.status(200).json({ user: {...user2send[0], password: undefined},success: true, last3: last3 });
+    } else {
+      return res
+        .status(500)
+        .json({ error: true, message: "Une erreur inconnue a eu lieu" });
+    }
   } catch (error) {
     return res
       .status(500)
       .json({ error: true, message: "Une erreur inconnue a eu lieu" });
   }
-};
+}
+
+exports.deleteOne = async (req, res) => {
+  try {
+    if (req.revision.userId == req.user.id) {
+      await Revision.updateOne({ favorite: !req.revision.favorite }, { id: req.revision.id });
+      const user2send = await Users.findOne({ id: req.user.id });
+      const last3 = await Revision.customQuery("SELECT * FROM revision WHERE userId = ? ORDER BY created DESC LIMIT 3", [req.user.id]);
+  
+      return res.status(200).json({ user: {...user2send[0], password: undefined},success: true, last3: last3 });
+    } else {
+      return res
+        .status(500)
+        .json({ error: true, message: "Une erreur inconnue a eu lieu" });
+    }
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ error: true, message: "Une erreur inconnue a eu lieu" });
+  }
+}
+

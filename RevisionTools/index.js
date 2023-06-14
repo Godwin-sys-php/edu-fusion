@@ -8,8 +8,12 @@ const sendResponse = require("../Middlewares/Tools/sendResponse");
 
 let app = express.Router()
 
+// middleware
 app.use('/', authUser); 
 app.use('/', creditCheck); 
+
+// utils
+app.use('/', require("./Utils/getOne"))
 
 // tools
 app.use('/', require("./mind-map.js"));
