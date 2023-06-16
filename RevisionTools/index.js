@@ -14,6 +14,7 @@ app.use('/', creditCheck);
 
 // utils
 app.use('/', require("./Utils/getOne"))
+app.use('/', require("./Utils/favorite"))
 
 // tools
 app.use('/', require("./mind-map.js"));
