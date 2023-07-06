@@ -31,7 +31,7 @@ app.post('/summarize', async (req, res, next) => {
         content: prompt,
       },
     ], 1, 1900, (data) => {
-      let formattedData = data.replace(/\n/g, "<br />");
+      let formattedData = !req.body.isFromMobile ? data.replace(/\n/g, "<br />") : data;
       req.app
         .get("socketService")
         .broadcastEmiter(

@@ -16,17 +16,17 @@ app.post('/flashcards', async (req, res, next) => {
         {
           "question": "Question 1",
           "answer": "Réponse 1",
-          "explanation": "Explication de la réponse 1"
+          "explanation": "Une explication courte de la réponse 1"
         },
         {
           "question": "Question 2",
           "answer": "Réponse 2",
-          "explanation": "Explication de la réponse 2"
+          "explanation": "Une explication courte de la réponse 2"
         },
         {
           "question": "Question 3",
           "answer": "Réponse 3",
-          "explanation": "Explication de la réponse 3"
+          "explanation": "Une explication courte de la réponse 3"
         },
         ...
       ]

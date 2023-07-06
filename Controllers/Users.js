@@ -18,10 +18,11 @@ exports.signup = async (req, res) => {
       email: email,
       password: await bcrypt.hash(password, 10),
       created: moment().unix(),
-      credits: 0,
+      credits: 15,
       creditsUsed: 0,
+      activate: true,
       plan: "",
-      status: "not activated",
+      status: "activate",
       current_period_end: null,
       cancel_at_period_end: true,
       why: why,
@@ -31,7 +32,7 @@ exports.signup = async (req, res) => {
 
     return res.status(201).json({
       created: true,
-      user: { ...newUser, password: undefined | null },
+      user: { ...newUser, password: undefined | null, id: inserted.insertId, },
       token: jwt.sign(
         { ...newUser, password: undefined | null, id: inserted.insertId },
         process.env.TOKEN,
@@ -93,6 +94,7 @@ exports.activate = async (req, res) => {
       plan: "trial",
       status: "activate",
       credits: 15,
+      activate: true,
     };
 
     await Users.updateOne(toSet, { id: req.user.id });

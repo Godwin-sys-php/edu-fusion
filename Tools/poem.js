@@ -37,7 +37,7 @@ app.post("/poem", async (req, res, next) => {
       1,
       1900,
       (data) => {
-        let formattedData = data.replace(/\n/g, "<br />");
+        let formattedData = !req.body.isFromMobile ? data.replace(/\n/g, "<br />") : data;
         req.app.get("socketService").broadcastEmiter(
           {
             userId: req.user.id,

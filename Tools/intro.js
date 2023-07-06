@@ -62,7 +62,9 @@ app.post("/intro", async (req, res, next) => {
           `Problématique: ${problematique}`,
       },
     ], 1, 2000, (data) => {
-      let formattedData = data.replace(/\n/g, "<br />");
+      let formattedData = !req.body.isFromMobile ? data.replace(/\n/g, "<br />") : data;
+
+      
       req.app
         .get("socketService")
         .broadcastEmiter(

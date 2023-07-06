@@ -132,7 +132,7 @@ exports.sendChat = async (req, res) => {
     });
 
     const [completion, token] = await gpt35(messages, 1, 3800, (data) => {
-      let formattedData = data.replace(/\n/g, "<br />");
+      let formattedData = !req.body.isFromMobile ? data.replace(/\n/g, "<br />") : data;
       req.app.get("socketService").broadcastEmiter(
         {
           userId: req.user.id,
