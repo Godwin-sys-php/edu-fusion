@@ -8,6 +8,15 @@ const configuration = new Configuration({
 
 const openai = new OpenAIApi(configuration);
 
+function isJsonString(str) {
+  try {
+      JSON.parse(str);
+  } catch (e) {
+      return false;
+  }
+  return true;
+}
+
 function gpt35(messages, temperature, maxToken, fn) {
   return new Promise(async (resolve, reject) => {
     let total_tokens = 0;
@@ -41,13 +50,15 @@ function gpt35(messages, temperature, maxToken, fn) {
           resolve([result, total_tokens]); // Résoudre la promesse avec le résultat lorsque le flux est terminé
           break; 
         }
-        const parsed = JSON.parse(message);
-        if (parsed.choices[0].delta.content) {
-          result += parsed.choices[0].delta.content;
-          if (fn) {
-            fn(result)
+        if (isJsonString(message)) {
+          const parsed = JSON.parse(message);
+          if (parsed.choices[0].delta.content) {
+            result += parsed.choices[0].delta.content;
+            if (fn) {
+              fn(result)
+            }
+            process.stdout.write(parsed.choices[0].delta.content)
           }
-          process.stdout.write(parsed.choices[0].delta.content)
         }
       }
     });

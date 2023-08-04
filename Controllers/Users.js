@@ -8,9 +8,15 @@ const RevisionToolUsage = require("../Models/RevisionToolUsage");
 
 require("dotenv").config();
 
+const twilio = require("twilio")(
+  process.env.TWILIO_ACCOUNT_SID,
+  process.env.TWILIO_AUTH_TOKEN
+);
+
 exports.signup = async (req, res) => {
   try {
     const { fname, lname, phoneNumber, email, password, why } = req.body;
+    const code = Math.floor(1000 + Math.random() * 9000).toString();
     const newUser = {
       fname: fname,
       lname: lname,
@@ -21,28 +27,74 @@ exports.signup = async (req, res) => {
       credits: 15,
       creditsUsed: 0,
       activate: true,
-      plan: "",
-      status: "activate",
+      plan: "trial",
       current_period_end: null,
       cancel_at_period_end: true,
       why: why,
+      verified: false,
+      codeSended: code,
+      expiredTimestamp: moment().unix() + 900,
     };
 
     const inserted = await Users.insertOne(newUser);
 
+    await twilio.messages.create({
+      body: `Votre code de confirmation Yuzi est: ${code}`,
+      to: `${phoneNumber}`, // Text your number
+      from: "+12562738311", // From a valid Twilio number
+    });
+
     return res.status(201).json({
       created: true,
-      user: { ...newUser, password: undefined | null, id: inserted.insertId, },
+      user: { ...newUser, password: undefined | null, id: inserted.insertId },
       token: jwt.sign(
         { ...newUser, password: undefined | null, id: inserted.insertId },
         process.env.TOKEN,
         {
-          expiresIn: 86400 * 7, // 7 weeks
+          expiresIn: 604800 * 7, // 7 weeks
         }
       ),
     });
   } catch (error) {
     console.log("ici");
+    console.log(error);
+    return res
+      .status(500)
+      .json({ error: true, message: "Une erreur inconnu a eu lieu" });
+  }
+};
+
+exports.verify = async (req, res) => {
+  try {
+    const { id, codeSupplied } = req.body;
+
+    const user = await Users.findOne({ id: id });
+    if (!user) {
+      throw new Error();
+    }
+
+    if (
+      user[0].code === codeSupplied &&
+      moment().unix() <= user[0].expiredTimestamp
+    ) {
+      await Users.updateOne({ verified: true }, { id: id });
+      return res.status(200).json({
+        verified: true,
+        user: { ...user[0], password: undefined | null, verified: true, },
+        token: jwt.sign(
+          { ...user[0], password: undefined | null, verified: true, },
+          process.env.TOKEN,
+          {
+            expiresIn: 604800 * 30, // 7 weeks
+          }
+        ),
+      });
+    } else {
+      return res.status(200).json({ verified: false, })
+    }
+  } catch (error) {
+    console.log("ici");
+    console.log(error);
     return res
       .status(500)
       .json({ error: true, message: "Une erreur inconnu a eu lieu" });
@@ -77,7 +129,7 @@ exports.login = async (req, res) => {
         { ...user[0], password: undefined | null },
         process.env.TOKEN,
         {
-          expiresIn: 86400 * 7, // 7 weeks
+          expiresIn: 604800 * 7, // 7 weeks
         }
       ),
     });
@@ -92,7 +144,6 @@ exports.activate = async (req, res) => {
   try {
     const toSet = {
       plan: "trial",
-      status: "activate",
       credits: 15,
       activate: true,
     };
@@ -100,23 +151,30 @@ exports.activate = async (req, res) => {
     await Users.updateOne(toSet, { id: req.user.id });
     console.log(req.user);
     const user = Users.findOne({ id: req.user.id });
-    
-    return res.status(200).json({ success: true, user: { ...user[0], password: undefined | null } });
+
+    return res.status(200).json({
+      success: true,
+      user: { ...user[0], password: undefined | null },
+    });
   } catch (error) {
     return res
       .status(500)
       .json({ error: true, message: "Une erreur inconnu a eu lieu" });
-    
   }
-}
+};
 
 exports.getOne = async (req, res) => {
   try {
     const user = await Users.findOne({ id: req.params.idUser });
-    const last3 = await Revision.customQuery("SELECT * FROM revision WHERE userId = ? ORDER BY created DESC LIMIT 3", [req.params.idUser]);
-    return res
-      .status(200)
-      .json({ success: true, user: { ...user[0], passord: undefined | null }, last3: last3 });
+    const last3 = await Revision.customQuery(
+      "SELECT * FROM revision WHERE userId = ? ORDER BY created DESC LIMIT 3",
+      [req.params.idUser]
+    );
+    return res.status(200).json({
+      success: true,
+      user: { ...user[0], passord: undefined | null },
+      last3: last3,
+    });
   } catch (error) {
     console.log(error);
     return res
@@ -127,56 +185,75 @@ exports.getOne = async (req, res) => {
 
 exports.getHistory = async (req, res) => {
   try {
-    let tool = await ToolUsage.findOne({ userId: req.user.id, });
-    tool.forEach(function(obj) {
+    let tool = await ToolUsage.findOne({ userId: req.user.id });
+    tool.forEach(function (obj) {
       obj.type = "tool";
     });
-    let sessions = await Revision.findOne({ userId: req.user.id, });
-    sessions.forEach(function(obj) {
+    let sessions = await Revision.findOne({ userId: req.user.id });
+    sessions.forEach(function (obj) {
       obj.type = "session";
     });
-    const revisionTool = await RevisionToolUsage.findOne({ userId: req.user.id, });
-    revisionTool.forEach(function(obj) {
+    const revisionTool = await RevisionToolUsage.findOne({
+      userId: req.user.id,
+    });
+    revisionTool.forEach(function (obj) {
       obj.type = "revisionTool";
     });
     let finalArray = tool.concat(sessions).concat(revisionTool);
-    finalArray.sort(function(a, b) {
+    finalArray.sort(function (a, b) {
       return a.created - b.created;
     });
-    const user2send = await Users.findOne({ id: req.user.id, });
-    return res.status(200).json({ success: true, data: finalArray.reverse(), user: {...user2send[0], password: undefined,} });
+    const user2send = await Users.findOne({ id: req.user.id });
+    return res.status(200).json({
+      success: true,
+      data: finalArray.reverse(),
+      user: { ...user2send[0], password: undefined },
+    });
   } catch (error) {
     console.log(error);
     return res
       .status(500)
       .json({ error: true, message: "Une erreur inconnu a eu lieu" });
   }
-}
+};
 
 exports.getFavorite = async (req, res) => {
   try {
-    let tool = await ToolUsage.customQuery("SELECT * FROM toolUsage WHERE userId = ? AND favorite = 1", req.user.id);
-    tool.forEach(function(obj) {
+    let tool = await ToolUsage.customQuery(
+      "SELECT * FROM toolUsage WHERE userId = ? AND favorite = 1",
+      req.user.id
+    );
+    tool.forEach(function (obj) {
       obj.type = "tool";
     });
-    let sessions = await Revision.customQuery("SELECT * FROM revision WHERE userId = ? AND favorite = 1", req.user.id);
-    sessions.forEach(function(obj) {
+    let sessions = await Revision.customQuery(
+      "SELECT * FROM revision WHERE userId = ? AND favorite = 1",
+      req.user.id
+    );
+    sessions.forEach(function (obj) {
       obj.type = "session";
     });
-    const revisionTool = await RevisionToolUsage.customQuery("SELECT * FROM revisionToolUsage WHERE userId = ? AND favorite = 1", req.user.id);
-    revisionTool.forEach(function(obj) {
+    const revisionTool = await RevisionToolUsage.customQuery(
+      "SELECT * FROM revisionToolUsage WHERE userId = ? AND favorite = 1",
+      req.user.id
+    );
+    revisionTool.forEach(function (obj) {
       obj.type = "revisionTool";
     });
     let finalArray = tool.concat(sessions).concat(revisionTool);
-    finalArray.sort(function(a, b) {
+    finalArray.sort(function (a, b) {
       return a.created - b.created;
     });
-    const user2send = await Users.findOne({ id: req.user.id, });
-    return res.status(200).json({ success: true, data: finalArray.reverse(), user: {...user2send[0], password: undefined,} });
+    const user2send = await Users.findOne({ id: req.user.id });
+    return res.status(200).json({
+      success: true,
+      data: finalArray.reverse(),
+      user: { ...user2send[0], password: undefined },
+    });
   } catch (error) {
     console.log(error);
     return res
       .status(500)
       .json({ error: true, message: "Une erreur inconnu a eu lieu" });
   }
-}
+};

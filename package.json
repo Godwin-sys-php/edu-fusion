@@ -18,6 +18,7 @@
     "socket.io": "^4.6.2",
     "supertokens-node": "^13.6.0",
     "tiktoken-node": "^0.0.6",
+    "twilio": "^4.14.0",
     "uuid": "^9.0.0"
   }
 }
