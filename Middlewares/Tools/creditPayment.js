@@ -3,7 +3,7 @@ const Users = require("../../Models/Users");
 module.exports = async (req, res, next) => {
   try {
     const user = await Users.findOne({ id: req.user.id, });
-    await Users.updateOne({ credits: user[0].credits - 1, creditsUsed: user[0].creditsUsed + 1, });
+    await Users.updateOne({ credits: user[0].credits - 1, creditsUsed: user[0].creditsUsed + 1, }, { id: req.user.id });
 
     next();
   } catch (error) {

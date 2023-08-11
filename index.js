@@ -29,18 +29,13 @@ app.use(limit({
   }
 }))
 
-app.use('/api/users', require('./Routes/Users'))
+app.use('/users', require('./Routes/Users'))
 //app.use('/api/feedback', require('./Routes/Feedback'))
-app.use('/api/revision', require('./Routes/Revision'))
-app.use('/api/tools', require('./Tools/index.js'))
-app.use('/api/revision-tools', require('./RevisionTools/index.js'))
+app.use('/revision', require('./Routes/Revision'))
+app.use('/tools', require('./Tools/index.js'))
+app.use('/revision-tools', require('./RevisionTools/index.js'))
 //app.use('/api/tool', require('./Routes/Tool'))
 
-
-// // Default Index Page
-app.use(express.static(__dirname + '/dist'));
-// Send all other items to index file
-app.get('*', (req, res) => res.sendFile(__dirname + '/dist/index.html'));
 
 server.listen(port, function () {
   console.debug(`listening on port ${port}`);

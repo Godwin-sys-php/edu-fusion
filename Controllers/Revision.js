@@ -63,7 +63,7 @@ exports.startRevisionSession = async (req, res) => {
     await Users.updateOne({
       credits: req.user.credits - 1,
       creditsUsed: req.user.creditsUsed + 1,
-    });
+    }, { id: req.user.id });
 
     await Revision.insertOne(revisionToInsert);
 

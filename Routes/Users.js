@@ -10,6 +10,8 @@ router.post("/signup", validatorUser, userCtrl.signup)
 router.post("/login", userCtrl.login)
 
 router.post("/activate", authUser, userCtrl.activate)
+router.post("/verify", userCtrl.verify)
+router.post("/delete", userCtrl.fakeDelete)
 
 router.get("/:idUser", authUserSecured, userCtrl.getOne)
 router.get("/special/history", authUser, userCtrl.getHistory)

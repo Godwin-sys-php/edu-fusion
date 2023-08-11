@@ -13,7 +13,7 @@ module.exports = async (req, res, next) => {
         console.log(err);
         return res.status(400).json({ invalidToken: true, message: "Veuillez vous reconnecter", })
 			} else {
-        const user = await Users.findOne({ id: decoded.id });
+        const user = await Users.customQuery("SELECT * FROM users WHERE id = ? AND notHere = 0" ,[decoded.id]);
         if (user.length === 0) {
           return res.status(400).json({ invalidToken: true, message: "Veuillez vous reconnecter", })
         }

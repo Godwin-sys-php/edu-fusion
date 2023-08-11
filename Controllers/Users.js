@@ -46,14 +46,15 @@ exports.signup = async (req, res) => {
 
     return res.status(201).json({
       created: true,
+      verified: false,
       user: { ...newUser, password: undefined | null, id: inserted.insertId },
-      token: jwt.sign(
-        { ...newUser, password: undefined | null, id: inserted.insertId },
-        process.env.TOKEN,
-        {
-          expiresIn: 604800 * 7, // 7 weeks
-        }
-      ),
+      // token: jwt.sign(
+      //   { ...newUser, password: undefined | null, id: inserted.insertId },
+      //   process.env.TOKEN,
+      //   {
+      //     expiresIn: 604800 * 7, // 7 weeks
+      //   }
+      // ),
     });
   } catch (error) {
     console.log("ici");
@@ -72,17 +73,17 @@ exports.verify = async (req, res) => {
     if (!user) {
       throw new Error();
     }
-
+    console.log(user[0].codeSended);
     if (
-      user[0].code === codeSupplied &&
+      user[0].codeSended == codeSupplied &&
       moment().unix() <= user[0].expiredTimestamp
     ) {
       await Users.updateOne({ verified: true }, { id: id });
       return res.status(200).json({
         verified: true,
-        user: { ...user[0], password: undefined | null, verified: true, },
+        user: { ...user[0], password: undefined | null, verified: true },
         token: jwt.sign(
-          { ...user[0], password: undefined | null, verified: true, },
+          { ...user[0], password: undefined | null, verified: true },
           process.env.TOKEN,
           {
             expiresIn: 604800 * 30, // 7 weeks
@@ -90,7 +91,7 @@ exports.verify = async (req, res) => {
         ),
       });
     } else {
-      return res.status(200).json({ verified: false, })
+      return res.status(200).json({ verified: false, message: "Code expiré" });
     }
   } catch (error) {
     console.log("ici");
@@ -105,7 +106,7 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
     const user = await Users.customQuery(
-      "SELECT * FROM users WHERE email = ?",
+      "SELECT * FROM users WHERE email = ? AND notHere = 0",
       [email]
     );
     if (user.length == 0)
@@ -115,15 +116,39 @@ exports.login = async (req, res) => {
         message: "Numéro de téléphone inexistant",
       });
 
-    if (!bcrypt.compareSync(password, user[0].password))
+    if (!bcrypt.compareSync(password, user[0].password)) {
       return res.status(400).json({
         email: true,
         password: false,
         message: "Mot de passe incorrect",
       });
+    }
+
+    if (user[0].verified == false) {
+      console.log("here");
+      const code = Math.floor(1000 + Math.random() * 9000).toString();
+      await Users.updateOne(
+        { codeSended: code, expiredTimestamp: moment().unix() + 900 },
+        { id: user[0].id }
+      );
+      await twilio.messages.create({
+        body: `Votre code de confirmation Yuzi est: ${code}`,
+        to: `${user[0].phoneNumber}`, // Text your number
+        from: "+12562738311", // From a valid Twilio number
+      });
+
+      return res.status(201).json({
+        logged: true,
+        verified: false,
+        codeSended: true,
+        user: { ...user[0], password: undefined | null },
+      });
+    }
 
     return res.status(200).json({
       logged: true,
+      verified: true,
+      codeSended: false,
       user: { ...user[0], password: undefined | null },
       token: jwt.sign(
         { ...user[0], password: undefined | null },
@@ -211,6 +236,38 @@ exports.getHistory = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
+    return res
+      .status(500)
+      .json({ error: true, message: "Une erreur inconnu a eu lieu" });
+  }
+};
+
+exports.fakeDelete = async (req, res) => {
+  try {
+    const {email, password} = req.body;
+    const user = await Users.customQuery(
+      "SELECT * FROM users WHERE email = ?",
+      [email]
+    );
+    if (user.length == 0)
+      return res.status(400).json({
+        email: false,
+        password: false,
+        message: "Numéro de téléphone inexistant",
+      });
+
+    if (!bcrypt.compareSync(password, user[0].password)) {
+      return res.status(400).json({
+        email: true,
+        password: false,
+        message: "Mot de passe incorrect",
+      });
+    }
+
+    await Users.updateOne({ notHere: true, }, { id: user[0].id, });
+
+    return res.status(200).json({ deleted: true, });
+  } catch (error) {
     return res
       .status(500)
       .json({ error: true, message: "Une erreur inconnu a eu lieu" });
