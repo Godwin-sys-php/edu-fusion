@@ -43,7 +43,7 @@ exports.signup = async (req, res) => {
       to: `${phoneNumber}`, // Text your number
       from: "+12562738311", // From a valid Twilio number
     });
-
+    console.log(code);
     return res.status(201).json({
       created: true,
       verified: false,
@@ -113,7 +113,7 @@ exports.login = async (req, res) => {
       return res.status(400).json({
         email: false,
         password: false,
-        message: "Numéro de téléphone inexistant",
+        message: "Adresse email inexistante",
       });
 
     if (!bcrypt.compareSync(password, user[0].password)) {
@@ -136,7 +136,7 @@ exports.login = async (req, res) => {
         to: `${user[0].phoneNumber}`, // Text your number
         from: "+12562738311", // From a valid Twilio number
       });
-
+      console.log(code);
       return res.status(201).json({
         logged: true,
         verified: false,
@@ -159,6 +159,7 @@ exports.login = async (req, res) => {
       ),
     });
   } catch (error) {
+    console.log(error);
     return res
       .status(500)
       .json({ error: true, message: "Une erreur inconnu a eu lieu" });

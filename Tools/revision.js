@@ -49,17 +49,17 @@ app.post("/revision", async (req, res, next) => {
       1,
       3700,
       (data) => {
-        let formattedData = !req.body.isFromMobile ? data.replace(/\n/g, "<br />") : data;
-        req.app
-          .get("socketService")
-          .broadcastEmiter(
-            {
-              userId: req.user.id,
-              data: formattedData,
-              completionId: completionId,
-            },
-            "completion"
-          );
+        let formattedData = !req.body.isFromMobile
+          ? data.replace(/\n/g, "<br />")
+          : data;
+        req.app.get("socketService").broadcastEmiter(
+          {
+            userId: req.user.id,
+            data: formattedData,
+            completionId: completionId,
+          },
+          "completion"
+        );
       }
     );
 
@@ -95,6 +95,13 @@ app.post("/revision", async (req, res, next) => {
     next();
   } catch (err) {
     console.log(err);
+    return res
+      .status(500)
+      .json({
+        error: true,
+        message:
+          "Une erreur inconnu au eu lieu, veuillez réessayez ou contactez nous !",
+      });
   }
 });
 

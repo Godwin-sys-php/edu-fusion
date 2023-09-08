@@ -79,7 +79,8 @@ app.post("/dissertation", async (req, res, next) => {
 
     next();
   } catch (err) {
-    console.log(err);
+    console.log(err)
+return res.status(200).json({ error: true, message: "Une erreur inconnu au eu lieu, veuillez réessayez ou contactez nous !" });;
   }
 });
 
