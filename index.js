@@ -3,6 +3,7 @@ const morgan = require('morgan');
 const bodyParser = require('body-parser')
 const cors = require('cors')
 const limit = require("express-rate-limit")
+const trimMiddleware= require('trim-middleware')
 const SocketService = require("./Utils/socket");
 
 require('dotenv').config();
@@ -19,7 +20,7 @@ app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
 app.use(bodyParser.json({limit: '50mb', extended: true}));
 app.use(morgan('dev'))
 app.use(cors())
-
+app.use(trimMiddleware());
 
 app.use(limit({
   windowMs: 10 * 60 * 1000, // 10 minutes
