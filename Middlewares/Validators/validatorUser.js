@@ -9,7 +9,7 @@ module.exports = async (req, res, next) => {
       (fname.length >= 1 && fname.length <= 100) &&
       (lname.length >= 1 && lname.length <= 100) &&
       (phoneNumber) &&
-      (/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i.test(req.body.email)) &&
+      (/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i.test(req.body.email.trim())) &&
       (password.length >= 8) &&
       (why.length >= 1 && why.length <= 150)
     ) {

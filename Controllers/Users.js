@@ -18,10 +18,10 @@ exports.signup = async (req, res) => {
     const { fname, lname, phoneNumber, email, password, why } = req.body;
     const code = Math.floor(1000 + Math.random() * 9000).toString();
     const newUser = {
-      fname: fname,
-      lname: lname,
+      fname: fname.trim(),
+      lname: lname.trim(),
       phoneNumber: phoneNumber,
-      email: email,
+      email: email.trim(),
       password: await bcrypt.hash(password, 10),
       created: moment().unix(),
       credits: 15,
@@ -104,7 +104,9 @@ exports.verify = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    let { email, password } = req.body;
+    email = email.trim()
+    password = password.trim()
     const user = await Users.customQuery(
       "SELECT * FROM users WHERE email = ? AND notHere = 0",
       [email]
