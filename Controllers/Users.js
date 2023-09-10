@@ -46,15 +46,15 @@ exports.signup = async (req, res) => {
     console.log(code);
     return res.status(201).json({
       created: true,
-      verified: false,
+      verified: true,
       user: { ...newUser, password: undefined | null, id: inserted.insertId },
-      // token: jwt.sign(
-      //   { ...newUser, password: undefined | null, id: inserted.insertId },
-      //   process.env.TOKEN,
-      //   {
-      //     expiresIn: 604800 * 7, // 7 weeks
-      //   }
-      // ),
+      token: jwt.sign(
+        { ...newUser, password: undefined | null, id: inserted.insertId },
+        process.env.TOKEN,
+        {
+          expiresIn: 604800 * 7, // 7 weeks
+        }
+      ),
     });
   } catch (error) {
     console.log("ici");
