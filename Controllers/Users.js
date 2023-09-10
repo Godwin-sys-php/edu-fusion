@@ -31,18 +31,18 @@ exports.signup = async (req, res) => {
       current_period_end: null,
       cancel_at_period_end: true,
       why: why,
-      verified: false,
+      verified: true,
       codeSended: code,
       expiredTimestamp: moment().unix() + 900,
     };
 
     const inserted = await Users.insertOne(newUser);
 
-    await twilio.messages.create({
-      body: `Votre code de confirmation Yuzi est: ${code}`,
-      to: `${phoneNumber}`, // Text your number
-      from: "+12562738311", // From a valid Twilio number
-    });
+    // await twilio.messages.create({
+    //   body: `Votre code de confirmation Yuzi est: ${code}`,
+    //   to: `${phoneNumber}`, // Text your number
+    //   from: "+12562738311", // From a valid Twilio number
+    // });
     console.log(code);
     return res.status(201).json({
       created: true,
@@ -133,11 +133,11 @@ exports.login = async (req, res) => {
         { codeSended: code, expiredTimestamp: moment().unix() + 900 },
         { id: user[0].id }
       );
-      await twilio.messages.create({
-        body: `Votre code de confirmation Yuzi est: ${code}`,
-        to: `${user[0].phoneNumber}`, // Text your number
-        from: "+12562738311", // From a valid Twilio number
-      });
+      // await twilio.messages.create({
+      //   body: `Votre code de confirmation Yuzi est: ${code}`,
+      //   to: `${user[0].phoneNumber}`, // Text your number
+      //   from: "+12562738311", // From a valid Twilio number
+      // });
       console.log(code);
       return res.status(201).json({
         logged: true,
