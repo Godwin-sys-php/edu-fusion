@@ -17,4 +17,6 @@ router.get("/:idUser", authUserSecured, userCtrl.getOne)
 router.get("/special/history", authUser, userCtrl.getHistory)
 router.get("/special/favorite", authUser, userCtrl.getFavorite)
 
+router.get("/special/tools", userCtrl.getTools)
+
 module.exports = router;

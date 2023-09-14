@@ -5,6 +5,7 @@ const moment = require("moment");
 const Revision = require("../Models/Revision");
 const ToolUsage = require("../Models/ToolUsage");
 const RevisionToolUsage = require("../Models/RevisionToolUsage");
+const tools = require("../Data/tools");
 
 require("dotenv").config();
 
@@ -191,6 +192,14 @@ exports.activate = async (req, res) => {
   }
 };
 
+exports.getTools = async (req, res) => {
+  try {
+    return res.status(200).json({ success: true, data: tools });
+  } catch (error) {
+    return res.status(500).json({ error: true, message: "Une erreur inconnu a eu lieu" });
+  }
+}
+
 exports.getOne = async (req, res) => {
   try {
     const user = await Users.findOne({ id: req.params.idUser });
@@ -201,6 +210,7 @@ exports.getOne = async (req, res) => {
     return res.status(200).json({
       success: true,
       user: { ...user[0], passord: undefined | null },
+      versionCode: tools.versionCode,
       last3: last3,
     });
   } catch (error) {
