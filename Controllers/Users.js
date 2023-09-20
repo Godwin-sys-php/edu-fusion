@@ -211,6 +211,7 @@ exports.getOne = async (req, res) => {
       success: true,
       user: { ...user[0], passord: undefined | null },
       versionCode: tools.versionCode,
+      minAppCode: tools.minAppCode,
       last3: last3,
     });
   } catch (error) {
