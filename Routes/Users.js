@@ -12,6 +12,7 @@ router.post("/login", userCtrl.login)
 router.post("/activate", authUser, userCtrl.activate)
 router.post("/verify", userCtrl.verify)
 router.post("/delete", userCtrl.fakeDelete)
+router.post("/delete-w-token", authUser, userCtrl.fakeDeleteWToken)
 
 router.get("/:idUser", authUserSecured, userCtrl.getOne)
 router.get("/special/history", authUser, userCtrl.getHistory)

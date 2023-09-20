@@ -287,6 +287,18 @@ exports.fakeDelete = async (req, res) => {
   }
 };
 
+exports.fakeDeleteWToken = async (req, res) => {
+  try {
+    await Users.updateOne({ notHere: true, }, { id: req.user.id, });
+
+    return res.status(200).json({ deleted: true, });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ error: true, message: "Une erreur inconnu a eu lieu" });
+  }
+};
+
 exports.getFavorite = async (req, res) => {
   try {
     let tool = await ToolUsage.customQuery(

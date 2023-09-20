@@ -1,5 +1,6 @@
 const tools = {
   versionCode: 1,
+  minAppCode: 1,
   data: [
     {
       title: "Plume Libre",
