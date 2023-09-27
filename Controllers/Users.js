@@ -6,6 +6,7 @@ const Revision = require("../Models/Revision");
 const ToolUsage = require("../Models/ToolUsage");
 const RevisionToolUsage = require("../Models/RevisionToolUsage");
 const tools = require("../Data/tools");
+const nodemailer = require("nodemailer");
 
 require("dotenv").config();
 
@@ -103,11 +104,102 @@ exports.verify = async (req, res) => {
   }
 };
 
+exports.fpRequest = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await Users.customQuery(
+      "SELECT * FROM users where email = ? AND notHere = 0",
+      [email]
+    );
+    if (user.length === 0) {
+      return res
+        .status(400)
+        .json({ notFound: true, message: "Adresse email introuvable" });
+    }
+    const token = jwt.sign(
+      { ...user[0], password: undefined | null, },
+      process.env.MAIL_TOKEN,
+      {
+        expiresIn: 900, // 15 minutes
+      }
+    )
+    let transporter = nodemailer.createTransport({
+      host: "mail.privateemail.com",
+      port: 465, // Utilisez le port 587 si vous ne souhaitez pas utiliser SSL
+      secure: true, // true pour le port 465, false pour d'autres ports
+      auth: {
+        user: process.env.MAIL_LOGIN, // Remplacez par votre adresse e-mail
+        pass: process.env.MAIL_PASS, // Remplacez par le mot de passe de votre e-mail
+      },
+    });
+    let resetLink = "https://my.yuzi.app/reset-password/"+token;
+    // Définissez les options pour l'e-mail
+    let mailOptions = {
+      from: "Yuzi <yuzi@corporus.net>", // Votre adresse e-mail
+      to: email, // Adresse e-mail du destinataire
+      subject: "Réinitialisation de votre mot de passe",
+      html: `
+      <div style="font-family: Arial, sans-serif; background-color: #1d1e30; color: white; padding: 20px;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: #25263a; padding: 20px; border-radius: 8px;">
+              <h2>Réinitialisation de votre mot de passe</h2>
+              <p>Bonjour,</p>
+              <p>Nous avons reçu une demande de réinitialisation de mot de passe pour votre compte Yuzi. Si vous n'avez pas fait cette demande, veuillez ignorer cet e-mail.</p>
+              <a href="${resetLink}" style="display: inline-block; padding: 10px 20px; border-radius: 5px; background-color: #007BFF; color: white; text-decoration: none; font-weight: bold; text-align: center;">Réinitialiser le mot de passe</a>
+              <p style="margin-top: 20px;">Si le bouton ne fonctionne pas, copiez et collez le lien suivant dans votre navigateur :</p>
+              <p><a href="${resetLink}" style="color: #00ccff;">${resetLink}</a></p>
+              <p><strong>Notez que ce lien expire dans 15 minutes.</strong></p>
+              <p>Merci d'utiliser Yuzi !</p>
+              <p>L'équipe Yuzi</p>
+          </div>
+      </div>`,
+    };
+
+    // Envoyez l'e-mail
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        return res
+          .status(500)
+          .json({ error: true, message: "Une erreur inconnu a eu lieu lors de l'envoie de l'email" });
+      }
+      return res.status(200).json({ emailSent: true, });
+    });
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .json({ error: true, message: "Une erreur inconnu a eu lieu" });
+  }
+};
+
+exports.fpApply = async (req, res) => {
+  try {
+    const {token, newPass} = req.body;
+    jwt.verify(token, process.env.MAIL_TOKEN, async function(err, decoded) {      
+			if (err) {
+        return res.status(400).json({ invalidToken: true, message: "Votre lien a expiré, veuillez en créer un autre", })
+			} else {
+        const user = await Users.customQuery("SELECT * FROM users WHERE id = ? AND notHere = 0" ,[decoded.id]);
+        if (user.length === 0) {
+          return res.status(400).json({ invalidToken: true, message: "Votre lien a expiré, veuillez en créer un autre", })
+        }
+        const newPassword = await bcrypt.hash(newPass, 10);
+        await Users.updateOne({ password: newPassword }, { id: decoded.id });
+        return res.status(200).json({ update: true, })
+			}
+		})
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .json({ error: true, message: "Une erreur inconnu a eu lieu" });
+  }
+}
+
 exports.login = async (req, res) => {
   try {
     let { email, password } = req.body;
-    email = email.trim()
-    password = password.trim()
+    email = email.trim();
+    password = password.trim();
     const user = await Users.customQuery(
       "SELECT * FROM users WHERE email = ? AND notHere = 0",
       [email]
@@ -196,9 +288,11 @@ exports.getTools = async (req, res) => {
   try {
     return res.status(200).json({ success: true, data: tools });
   } catch (error) {
-    return res.status(500).json({ error: true, message: "Une erreur inconnu a eu lieu" });
+    return res
+      .status(500)
+      .json({ error: true, message: "Une erreur inconnu a eu lieu" });
   }
-}
+};
 
 exports.getOne = async (req, res) => {
   try {
@@ -258,7 +352,7 @@ exports.getHistory = async (req, res) => {
 
 exports.fakeDelete = async (req, res) => {
   try {
-    const {email, password} = req.body;
+    const { email, password } = req.body;
     const user = await Users.customQuery(
       "SELECT * FROM users WHERE email = ?",
       [email]
@@ -278,9 +372,9 @@ exports.fakeDelete = async (req, res) => {
       });
     }
 
-    await Users.updateOne({ notHere: true, }, { id: user[0].id, });
+    await Users.updateOne({ notHere: true }, { id: user[0].id });
 
-    return res.status(200).json({ deleted: true, });
+    return res.status(200).json({ deleted: true });
   } catch (error) {
     return res
       .status(500)
@@ -290,9 +384,9 @@ exports.fakeDelete = async (req, res) => {
 
 exports.fakeDeleteWToken = async (req, res) => {
   try {
-    await Users.updateOne({ notHere: true, }, { id: req.user.id, });
+    await Users.updateOne({ notHere: true }, { id: req.user.id });
 
-    return res.status(200).json({ deleted: true, });
+    return res.status(200).json({ deleted: true });
   } catch (error) {
     return res
       .status(500)
